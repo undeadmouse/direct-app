@@ -21,10 +21,13 @@ import com.topcoder.direct.services.view.dto.project.edit.EditCockpitProjectDTO;
 import com.topcoder.direct.services.view.form.ProjectIdForm;
 import com.topcoder.direct.services.view.util.DataProvider;
 import com.topcoder.direct.services.view.util.DirectUtils;
+import com.topcoder.security.groups.model.GroupPermissionType;
+import com.topcoder.security.groups.services.AuthorizationService;
 import com.topcoder.security.TCSubject;
 import com.topcoder.security.groups.model.BillingAccount;
 import com.topcoder.security.groups.model.DirectProject;
 import com.topcoder.security.groups.model.Group;
+import com.topcoder.security.groups.services.AuthorizationService;
 import com.topcoder.security.groups.services.GroupService;
 import com.topcoder.security.groups.services.dto.GroupSearchCriteria;
 import com.topcoder.service.facade.contest.notification.ContestNotification;
@@ -204,6 +207,13 @@ public class EditCockpitProjectAction extends BaseDirectStrutsAction implements 
      * @since 2.1
      */
     private GroupService groupService;
+
+    /**
+     * <p>A <code>GroupService</code> providing the interface to security groups authorization service.</p>
+     * 
+     * @since 2.1
+     */
+    private AuthorizationService groupAuthorizationService;
 
     /**
      * Gets the view data.
@@ -396,6 +406,13 @@ public class EditCockpitProjectAction extends BaseDirectStrutsAction implements 
         // TC staff has full permission to manage cockpit project resources and notifications
         if(DirectUtils.isTcStaff(currentUser)) {
             this.viewData.setHasFullPermission(true);
+        } else {
+            long projectId = getFormData().getProjectId();
+            boolean groupFull =  DirectUtils.hasPermissionBySecurityGroups(currentUser, projectId, groupAuthorizationService,
+                                                             GroupPermissionType.FULL);
+            if (groupFull) {
+                this.viewData.setHasFullPermission(true);
+            }
         }
 
         final List<Long> watchedUserIds = getProjectServiceFacade().getWatchedUserIdsForProjectForum(currentUser, users, getFormData().getProjectId());
@@ -728,6 +745,26 @@ public class EditCockpitProjectAction extends BaseDirectStrutsAction implements 
      */
     public void setGroupService(GroupService groupService) {
         this.groupService = groupService;
+    }
+
+    /**
+     * <p>Gets the interface to security group authorization service.</p>
+     *
+     * @return a <code>GroupService</code> providing the interface to security group authorizationservice.
+     * @since 2.2
+     */
+    public AuthorizationService getGroupAuthorizationService() {
+        return this.groupAuthorizationService;
+    }
+
+    /**
+     * <p>Sets the interface to security group authorization service.</p>
+     *
+     * @param groupService a <code>GroupService</code> providing the interface to security group authorization service.
+     * @since 2.2
+     */
+    public void setGroupAuthorizationService(AuthorizationService groupAuthorizationService) {
+        this.groupAuthorizationService = groupAuthorizationService;
     }
 
 }

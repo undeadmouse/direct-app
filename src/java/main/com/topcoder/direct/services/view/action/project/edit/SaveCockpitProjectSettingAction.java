@@ -26,6 +26,8 @@ import com.topcoder.management.resource.ResourceRole;
 import com.topcoder.security.TCSubject;
 import com.topcoder.security.groups.model.BillingAccount;
 import com.topcoder.security.groups.model.Group;
+import com.topcoder.security.groups.model.GroupPermissionType;
+import com.topcoder.security.groups.services.AuthorizationService;
 import com.topcoder.security.groups.services.GroupService;
 import com.topcoder.security.groups.services.dto.GroupSearchCriteria;
 import com.topcoder.service.facade.contest.notification.ContestNotification;
@@ -160,6 +162,13 @@ public class SaveCockpitProjectSettingAction extends BaseDirectStrutsAction
      */
     private GroupService groupService;
 
+     /**
+     * <p>A <code>GroupService</code> providing the interface to security groups authorization service.</p>
+     * 
+     * @since 2.4
+     */
+    private AuthorizationService groupAuthorizationService;
+
     /**
      * The project contest fee service.
      *
@@ -250,6 +259,26 @@ public class SaveCockpitProjectSettingAction extends BaseDirectStrutsAction
      */
     public void setProjectContestFeePercentageService(ProjectContestFeePercentageService projectContestFeePercentageService) {
         this.projectContestFeePercentageService = projectContestFeePercentageService;
+    }
+
+    /**
+     * <p>Gets the interface to security group authorization service.</p>
+     *
+     * @return a <code>GroupService</code> providing the interface to security group authorizationservice.
+     * @since 2.2
+     */
+    public AuthorizationService getGroupAuthorizationService() {
+        return this.groupAuthorizationService;
+    }
+
+    /**
+     * <p>Sets the interface to security group authorization service.</p>
+     *
+     * @param groupService a <code>GroupService</code> providing the interface to security group authorization service.
+     * @since 2.2
+     */
+    public void setGroupAuthorizationService(AuthorizationService groupAuthorizationService) {
+        this.groupAuthorizationService = groupAuthorizationService;
     }
 
     /**
@@ -427,6 +456,15 @@ public class SaveCockpitProjectSettingAction extends BaseDirectStrutsAction
                 if (p.getUserId() == currentUser.getUserId() && p.getPermissionType().getPermissionTypeId() == PROJECT_FULL_PERMISSION_TYPE_ID) {
                     hasFullPermission = true;
                 }
+            }
+        } 
+
+        if (!hasFullPermission) {
+            long projectId = getFormData().getProjectId();
+            boolean groupFull =  DirectUtils.hasPermissionBySecurityGroups(currentUser, projectId, groupAuthorizationService,
+                                                             GroupPermissionType.FULL);
+            if (groupFull) {
+                hasFullPermission = true;
             }
         }
 
